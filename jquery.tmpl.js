@@ -44,26 +44,33 @@
 		}
 	, {
 		compile  : function ( template, id ) {
-			// Reusable template generator function.
-			var render = new Function( 'data', '_index',
-				'var $ = jQuery, buffer = [];' +
-				// Scope data as local variables
-				'with ( data ) { buffer.push( "' +
-				// Convert the template into pure JavaScript
-				template
-					.replace( /[\r\t\n]/g, ' ' )
-					.replace( /{{(\w+)}}/g, '{{= $1}}' )
-					.replace( /{{(\/?)(\w+|.)(?:\((.*?)\))?(?: (.*?))?}}/g, function ( all, slash, type, fnargs, args ) {
-						var tmpl = $.tpl.fn[ type ];
-						if ( ! tmpl )
-							//return '" );buffer.push( "';
-							throw 'Template function not found: ' + type;
-						return '" );' + tmpl[ slash ? 'suffix' : 'prefix' ]
-							.split( '$1' ).join( args || tmpl._default[ 0 ] )
-							.split( '$2' ).join( fnargs || tmpl._default[ 1 ] ) + 'buffer.push( "';
-					} )
+			var fn = [
+					'var $ = jQuery, $buffer = [];'
+					// Scope data as local variables
+					, 'with ( $data ) {'
+					, '\t$buffer.push( "'
+					// Convert the template into pure JavaScript
+					+ template
+						.replace( /\r\n|[\n\v\f\r\x85\u2028\u2029]/g, ' ' ) // remove new lines
+						.replace( /"/g, '\\"' ) // escape quotes
+						.replace( /{{([\w$]+)}}/g, '{{= $1}}' ) // default to echo
+						.replace( /{{(\/?)(\w+|.)(?:\((.*?)\))?(?: (.*?))?}}/g, function ( all, slash, type, fnargs, args ) {
+							var tmpl = $.tpl.fn[ type ];
+							if ( ! tmpl )
+								//return '" );\n\tbuffer.push( "';
+								throw 'Template function not found: ' + type;
+							return '" );\n\t' + tmpl[ slash ? 'suffix' : 'prefix' ]
+								.split( '$1' ).join( args || tmpl._default[ 0 ] )
+								.split( '$2' ).join( fnargs || tmpl._default[ 1 ] ) + '\n\t$buffer.push( "';
+						} )
+					+ '" );'
+					, '};'
 					//@todo : pb when template starts or ends with text nodes
-				+ '" ); } return $( buffer.join( "" ) ).get();' );
+					, 'return $( $buffer.join( "" ) ).get();'
+				]
+				// Reusable template generator function.
+				, render = new Function( '$data', '$i', fn.join( '\n' ) )
+			;
 			return id ?
 				( $.tpl.cache[ id ] = render ) :
 				render;
@@ -80,6 +87,11 @@
 				, prefix : '$.each( $1, function ( $2 ) { with ( this ) {'
 				, suffix : '} } );'
 			}
+			'#'   : {
+				_default : [ null, 'index' ]
+				, prefix : '$.each( $1, function ( $2 ) { with ( this ) {'
+				, suffix : '} } );'
+			}
 			, if   : {
 				prefix   : 'if ( $1 ) {'
 				, suffix : '}'
@@ -88,12 +100,14 @@
 				prefix : '} else {'
 			}
 			, html : {
-				prefix : 'buffer.push( $.isFunction( $1 ) ? $1.call( this ) : $1 );'
+				prefix : '$buffer.push( $.isFunction( $1 ) ? $1.call( this ) : $1 );'
 			}
 			, '='  : {
 				_default : [ 'this' ]
-				, prefix : 'buffer.push( $.tpl.encode( $.isFunction( $1 ) ? $1.call( this ) : $1 ) );'
+				, prefix : '$buffer.push( $.tpl.encode( $.isFunction( $1 ) ? $1.call( this ) : $1 ) );'
 			}
+
 		}
 	} );
 } )( jQuery );
+// http://stackoverflow.com/questions/4253367/how-to-escape-a-json-string-containing-newline-characters-using-javascript
