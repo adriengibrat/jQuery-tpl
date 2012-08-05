@@ -1,131 +1,99 @@
-/*
- * jQuery Templating Plugin
- *   NOTE: Created for demonstration purposes.
+/* jQuery Templating Plugin
  * Copyright 2010, John Resig
  * Dual licensed under the MIT or GPL Version 2 licenses.
  */
-(function(jQuery){
-	// Override the DOM manipulation function
-	var oldManip = jQuery.fn.domManip;
-	
-	jQuery.fn.extend({
-		render: function( data ) {
-			return this.map(function(i, tmpl){
-				return jQuery.render( tmpl, data );
-			});
+( function ( $ ) {
+	// Override DOM manipulation function
+	var domManip = $.fn.domManip;
+	$.fn.extend( {
+		tpl: function ( data ) {
+			return this.map( function ( index, template ) {
+				return $.tpl( template, data );
+			} );
 		},
-		
-		// This will allow us to do: .append( "template", dataObject )
-		domManip: function( args ) {
+		// Allow to do: .append( "template", dataObject )
+		domManip: function ( args ) {
 			// This appears to be a bug in the appendTo, etc. implementation
 			// it should be doing .call() instead of .apply(). See #6227
-			if ( args.length > 1 && args[0].nodeType ) {
-				arguments[0] = [ jQuery.makeArray(args) ];
-			}
-
-			if ( args.length === 2 && typeof args[0] === "string" && typeof args[1] !== "string" ) {
-				arguments[0] = [ jQuery.render( args[0], args[1] ) ];
-			}
-			
-			return oldManip.apply( this, arguments );
+			if ( args.length > 1 && args[ 0 ].nodeType )
+				arguments[ 0 ] = [ $.makeArray( args ) ];
+			if ( args.length === 2 && typeof args[ 0 ] === 'string' && typeof args[ 1 ] !== 'string' )
+				arguments[ 0 ] = [ $.tpl( args[ 0 ], args[ 1 ] ) ];
+			return domManip.apply( this, arguments );
 		}
-	});
-	
-	jQuery.extend({
-		render: function( tmpl, data ) {
-			var fn;
-			
+	} );
+	/* Usage :
+	 *   $.tpl.cache.foo = $.tpl( 'some long templating string' );
+	 *   $( '#test' ).append( 'foo', data );
+	 */
+	$.tpl = $.extend( function( template, data ) {
+			var render;
 			// Use a pre-defined template, if available
-			if ( jQuery.templates[ tmpl ] ) {
-				fn = jQuery.templates[ tmpl ];
-				
-			// We're pulling from a script node
-			} else if ( tmpl.nodeType ) {
-				var node = tmpl, elemData = jQuery.data( node );
-				fn = elemData.tmpl || jQuery.tmpl( node.innerHTML );
-			}
-
-			fn = fn || jQuery.tmpl( tmpl );
-			
-			// We assume that if the template string is being passed directly
-			// in the user doesn't want it cached. They can stick it in
-			// jQuery.templates to cache it.
-
-			if ( jQuery.isArray( data ) ) {
-				return jQuery.map( data, function( data, i ) {
-					return fn.call( data, jQuery, data, i );
-				});
-
-			} else {
-				return fn.call( data, jQuery, data, 0 );
-			}
-		},
-		
-		// You can stick pre-built template functions here
-		templates: {},
-
-		/*
-		 * For example, someone could do:
-		 *   jQuery.templates.foo = jQuery.tmpl("some long templating string");
-		 *   $("#test").append("foo", data);
-		 */
-
-		tmplcmd: {
-			each: {
-				_default: [ null, "$i" ],
-				prefix: "jQuery.each($1,function($2){with(this){",
-				suffix: "}});"
-			},
-			if: {
-				prefix: "if($1){",
-				suffix: "}"
-			},
-			else: {
-				prefix: "}else{"
-			},
-			html: {
-				prefix: "_.push(typeof $1==='function'?$1.call(this):$1);"
-			},
-			"=": {
-				_default: [ "this" ],
-				prefix: "_.push($.encode(typeof $1==='function'?$1.call(this):$1));"
-			}
-		},
-
-		encode: function( text ) {
-			return text != null ? document.createTextNode( text.toString() ).nodeValue : "";
-		},
-
-		tmpl: function(str, data, i) {
-			// Generate a reusable function that will serve as a template
-			// generator (and which will be cached).
-			var fn = new Function("jQuery","$data","$i",
-				"var $=jQuery,_=[];_.data=$data;_.index=$i;" +
-
-				// Introduce the data as local variables using with(){}
-				"with($data){_.push('" +
-
-				// Convert the template into pure JavaScript
-				str
-					.replace(/[\r\t\n]/g, " ")
-					.replace(/\${([^}]*)}/g, "{{= $1}}")
-					.replace(/{{(\/?)(\w+|.)(?:\((.*?)\))?(?: (.*?))?}}/g, function(all, slash, type, fnargs, args) {
-						var tmpl = jQuery.tmplcmd[ type ];
-
-						if ( !tmpl ) {
-							throw "Template not found: " + type;
-						}
-
-						var def = tmpl._default;
-
-						return "');" + tmpl[slash ? "suffix" : "prefix"]
-							.split("$1").join(args || def[0])
-							.split("$2").join(fnargs || def[1]) + "_.push('";
-					})
-				+ "');}return $(_.join('')).get();");
-
-			// Provide some basic currying to the user
-			return data ? fn.call( this, jQuery, data, i ) : fn;
+			if ( $.tpl.cache[ template ] )
+				render = $.tpl.cache[ template ];
+			// We're pulling from a node
+			else if ( template.nodeType )
+				render = $.data( template ).tpl || $.tpl.compile( template.innerHTML, template.id );
+			else
+				render = $.tpl.compile( template );// @todo load from url ?
+			return $.isArray( data ) ?
+				$.map( data, function( data, index ) {
+					return render.call( data, data, index );
+				} ) :
+				render.call( data, data, 0 );
 		}
-	});
-})(jQuery);
+	, {
+		compile  : function ( template, id ) {
+			// Reusable template generator function.
+			var render = new Function( 'data', '_index',
+				'var $ = jQuery, buffer = [];' +
+				// Scope data as local variables
+				'with ( data ) { buffer.push( "' +
+				// Convert the template into pure JavaScript
+				template
+					.replace( /[\r\t\n]/g, ' ' )
+					.replace( /{{(\w+)}}/g, '{{= $1}}' )
+					.replace( /{{(\/?)(\w+|.)(?:\((.*?)\))?(?: (.*?))?}}/g, function ( all, slash, type, fnargs, args ) {
+						var tmpl = $.tpl.fn[ type ];
+						if ( ! tmpl )
+							//return '" );buffer.push( "';
+							throw 'Template function not found: ' + type;
+						return '" );' + tmpl[ slash ? 'suffix' : 'prefix' ]
+							.split( '$1' ).join( args || tmpl._default[ 0 ] )
+							.split( '$2' ).join( fnargs || tmpl._default[ 1 ] ) + 'buffer.push( "';
+					} )
+					//@todo : pb when template starts or ends with text nodes
+				+ '" ); } return $( buffer.join( "" ) ).get();' );
+			return id ?
+				( $.tpl.cache[ id ] = render ) :
+				render;
+		}
+		, encode : function ( text ) {
+			return text != null ?
+				document.createTextNode( text.toString() ).nodeValue :
+				'' ;
+		}
+		, cache  : {}
+		, fn     : {
+			each   : {
+				_default : [ null, 'index' ]
+				, prefix : '$.each( $1, function ( $2 ) { with ( this ) {'
+				, suffix : '} } );'
+			}
+			, if   : {
+				prefix   : 'if ( $1 ) {'
+				, suffix : '}'
+			}
+			, else : {
+				prefix : '} else {'
+			}
+			, html : {
+				prefix : 'buffer.push( $.isFunction( $1 ) ? $1.call( this ) : $1 );'
+			}
+			, '='  : {
+				_default : [ 'this' ]
+				, prefix : 'buffer.push( $.tpl.encode( $.isFunction( $1 ) ? $1.call( this ) : $1 ) );'
+			}
+		}
+	} );
+} )( jQuery );
