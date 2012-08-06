@@ -52,8 +52,8 @@
 						.replace( /{{(\W?\s?)([^\s}]*)}}(?:(.*?){{\/\2}})?/g, function ( all, command, data, content ) {
 							var tmpl = $.tpl.fn[ $.trim( command ) ];
 							if ( ! tmpl )
-								//return '" );\n$buffer.push( "';
-								throw 'Command not found: ' + command;
+								return '" );\n$buffer.push( "';
+								//throw 'Command not found: ' + command;
 							return '" );\n$buffer.push( '
 								+ tmpl
 									.split( '$1' ).join( data )
@@ -81,7 +81,7 @@
 		}
 		, cache  : {}
 		, fn     : {
-			'#'   : '$.map( $.makeArray( $1 ), function ( data ) { return $.tpl.render( $.tpl( "$2", data ) ); } ).join( "" )'
+			'#'   : '$1 ? $.map( $.makeArray( $1 ), function ( data ) { return $.tpl.render( $.tpl( "$2", data ) ); } ).join( "" ) : null'
 			, ''  : '$.tpl.encode( $.isFunction( $1 ) ? $1.call( this ) : $1 )'
 			, '&' : '$.isFunction( $1 ) ? $1.call( this ) : $1'
 			, '>' : '$.tpl.render( $.tpl( "$1", $data ) )'
