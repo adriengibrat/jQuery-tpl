@@ -19,7 +19,6 @@ $( 'ul' ).append( '#sometmpl', arrayOfObjects );
 ```
 ```html
 <ul></ul>
-
 <script id="litpl" type="text/html">
 <li><b>{{property}}</b></li>
 </script>

@@ -1,26 +1,26 @@
-/* jQuery Templating Plugin
- * Copyright 2010, John Resig
- * Dual licensed under the MIT or GPL Version 2 licenses.
+/* Logicless templating for jQuery using Mustache like markup & syntax
+ * Copyright 2012, Adrien Gibrat
+ * Dual licensed under the MIT or GPL Version 2 licenses
  */
 ( function ( $ ) {
 	var plugin      = function tpl ( template, data ) {
-			var tpl = $[ namespace ]
-				, render;
+			var renderer;
+			// Get template from a node (and caching in data)
+			if ( template.nodeType )
+				renderer = $.data( template, namespace ) || $.data( template, namespace, plugin.compile( template.innerHTML, template.id ) );
 			// Use a pre-defined template, if available
-			if ( tpl.cache[ template ] )
-				render = tpl.cache[ template ];
-			// We're pulling from a node
-			else if ( template.nodeType )
-				render = $.data( template )[ namespace ] || tpl.compile( template.innerHTML, template.id );
-			else if ( /^#?\w+$/.test( template ) && document.getElementById( template.replace( /^#/, '' ) ) && ( template  = $( template.replace( /(^)(?!#)/, '#' ) ) ) )
-				render = template.data( namespace ) || tpl.compile( template.html(), template.attr( 'id' ) );
-			else // @todo load from url ?
-				render = tpl.compile( template );
+			else if ( plugin.cache[ template ] )
+				renderer = plugin.cache[ template ];
+			// Get template from element with given Id (accept Id prefixed with #)
+			else if ( /^#?\w+$/.test( template ) && ( renderer = document.getElementById( template.replace( /^#/, '' ) ) ) )
+				return plugin( renderer, data, arguments[ 2 ] );
+			else
+				renderer = plugin.compile( template );
 			return $.isArray( data ) ?
 				$( $.map( data, function( data, index ) {
-					return render.call( data, data, index ).get();
+					return renderer.call( data, data, index ).get();
 				} ) ) :
-				render.call( data, data, 0 );
+				renderer.call( data, data, arguments[ 2 ] || 0 );
 		}
 		, namespace = plugin.name
 		// Override DOM manipulation function
@@ -31,40 +31,41 @@
 		if ( args.length > 1 && args[ 0 ].nodeType )
 			arguments[ 0 ] = [ $.makeArray( args ) ];
 		if ( args.length === 2 && typeof args[ 0 ] === 'string' && typeof args[ 1 ] !== 'string' )
-			arguments[ 0 ] = $[ namespace ]( args[ 0 ], args[ 1 ] );
+			arguments[ 0 ] = plugin( args[ 0 ], args[ 1 ] );
 		return domManip.apply( this, arguments );
 	};
 	$.fn[ namespace ] = function ( data ) {
 		return this.map( function ( index, template ) {
-			return $[ namespace ]( template, data ).get();
+			return plugin( template, data ).get();
 		} );
 	};
 	$[ namespace ]    = $.extend( plugin , {
 		compile  : function ( template, id ) {
-			var render = [
+			// Reusable template generator function.
+			return plugin.cache[ id || template ] = new Function( '$data', '$index', [
 					'var $ = jQuery, $buffer = [];'
 					, '$buffer.push( "'
 					// Convert the template into pure JavaScript
 					+ template
-						.replace( /"/g, '\\"' ) // escape quotes
-						.replace( /\r\n|[\n\v\f\r\x85\u2028\u2029]/g, '" + "\\n" + "' ) // escape new lines
+						// Escape quotes
+						.replace( /"/g, '\\"' )
+						// Escape new lines
+						.replace( /\r\n|[\n\v\f\r\x85\u2028\u2029]/g, '" + "\\n" + "' )
+						// Replace tags
 						.replace( /{{(\W?\s?)([^}]*)}}(?:(.*?){{\/\2}})?/g, function ( all, command, data, content ) {
-							var tmpl = $[ namespace ].fn[ $.trim( command ) ];
+							var tmpl = plugin.fn[ $.trim( command ) ];
 							if ( ! tmpl )
-								return '" );\n$buffer.push( "';
-								//throw 'Command not found: ' + command;
+								return '" );\n$buffer.push( "';//throw 'Command not found: ' + command;
 							return '" );\n$buffer.push( '
 								+ tmpl
-									.split( '$0' ).join( data )
-									.split( '$1' ).join( '$data["' + data + '"]' )
-									.split( '$2' ).join( content )
+									.split( '$0' ).join( '"' + data + '"' )
+									.split( '$1' ).join( /^\w+$/.test( data ) ? '$data.' + data : '$data["' + data + '"]' )
+									.split( '$2' ).join( '"' + content + '"' )
 								+ ' );\n$buffer.push( "';
 						} )
 					+ '" );'
 					, 'return $( "<' + namespace + '>" + $buffer.join( "" ) + "</' + namespace + '>" ).contents();'
-				];
-			// Reusable template generator function.
-			return $[ namespace ].cache[ id || template ] = new Function( '$data', '$index', render.join( '\n' ) );
+				].join( '\n' ) );
 		}
 		, encode : function ( text ) {
 			return text ? $( '<' + namespace + '/>' ).text( text ).html() : '' ;
@@ -78,15 +79,21 @@
 		}
 		, cache  : {}
 		, fn     : {
-			'#'   : '$1 ? $.map( $.makeArray( typeof $1 === "boolean" ? $data : $1 ), function ( data ) { \
-	return $.' + namespace + '.render( $.isFunction( data ) ? data.call( $data, $.' + namespace + '( "$2", $data ) ) : $.' + namespace + '( "$2", data ) );\
-} ).join( "" ) : null'
+			'#'   : '$1 ? \
+$.map( $.makeArray( typeof $1 === "boolean" ? $data : $1 ), function ( data, index ) { \
+	return $.' + namespace + '.render( \
+		$.isFunction( data ) ?\
+			data.call( $data, $.' + namespace + '( $2, $data, index ) ) : \
+			$.' + namespace + '( $2, data, index ) \
+	); \
+} ).join( "" ) : \
+null'
 			, ''  : '$.' + namespace + '.encode( $.isFunction( $1 ) ? $1.call( $data ) : $1 )'
 			, '&' : '$.isFunction( $1 ) ? $1.call( $data ) : $1'
-			, '>' : '$.' + namespace + '.render( $.' + namespace + '( "$0", $data ) )'
-			, '^' : '$1 && $1.length ? null : "$2"'
+			, '>' : '$.' + namespace + '.render( $.' + namespace + '( $0, $data, $index ) )'
+			, '^' : '$1 && $1.length ? null : $2'
 			, '.' : '$data'
-			, '*' : '$index'
+			, '*' : '$index + 1'
 			, '!' : null
 		}
 	} );

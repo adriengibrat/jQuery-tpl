@@ -2,6 +2,7 @@
 <script src="jquery.tpl.js"></script>
 <script>
 jQuery( function () {
+
 	$( '#typical' )
 		.tpl( {
 			name          : 'Chris'
@@ -9,57 +10,60 @@ jQuery( function () {
 			, taxed_value : 10000 - ( 10000 * 0.4 )
 			, in_ca       : true
 		} )
+		.prepend( '<i>Typical exemple: </i><br>' )
 		.appendTo( 'body' );
-	$( '#unescape' )
-		.tpl( {
+
+	$( '<div id="unescapeExemple"><i>Unescape exemple: </i></div>' )
+		.append( 'unescape', {
 			name      : 'Chris'
 			, company : '<b>GitHub</b>'
 		} )
 		.appendTo( 'body' );
-	$( '#emptySection' )
-		.tpl( {
+
+	$( '#unescapeExemple' )
+		.after( 'emptySection', {
 			person : true
 		} )
-		.appendTo( 'body' );
-	$( 'body' )
-		.append( 'emptySection', {
+		.after( '#emptySection', {
 			nothin : true
-		} );
-	$( '#section' )
-		.tpl( {
+		} )
+		.after( '<i>Empty section exemple</i><br>' );
+
+	$( 'body' )
+		.append( '<br><br><i>Section exemple</i>' )
+		.append( $.tpl( '#section', {
 			repo : [
 				{ name : 'git' }
 				, { name : 'hub' }
 				, { name : 'rocks' }
 			]
-		} )
-		.appendTo( 'body' );
-	$( '#lambda' )
-		.tpl( {
-			name      : 'Willy'
-			, wrapped : function ( tpl ) {
-				return '<b>' + $.tpl.render( tpl ) + '</b>';
-			}
-		} )
-		.appendTo( 'body' );
-	$( '#noneFalse' )
-		.tpl( {
+		} ) );
+
+	$.tpl( 'lambda', {
+		name      : 'Willy'
+		, wrapped : function ( tpl ) {
+			return '<b>' + $.tpl.render( tpl ) + '</b>';
+		}
+	} )
+	.appendTo( 'body' );
+
+	$( 'body' )
+		.prepend( 'noneFalse', {
 			'person?' : { name: 'Will' }
 		} )
-		.appendTo( 'body' );
+		.prepend( '<i>noneFalse exemple</i><br>' );
+
 	$( '#inverted' )
 		.tpl( {
 			repo : []
 		} )
-		.appendTo( 'body' );
-	$( '#comment' )
-		.tpl( {} )
-		.appendTo( 'body' );
-	$( '#partial' )
-		.tpl( {
-			names : [{ name: 'John' },{ name: 'Bill' }]
-		} )
-		.appendTo( 'body' );
+		.add( $.tpl( '#comment', {} ) )
+		.appendTo( 'body' )
+
+	$.tpl( 'partial', {
+		names : ['John','Bill']
+	} )
+	.appendTo( 'body' );
 } );
 </script>
 
@@ -121,5 +125,5 @@ Shown.
 {{/names}}
 </script>
 <script id="user" type="text/html">
-<li>{{name}}</li>
+<li>{{*}}{{.}}</li>
 </script>
