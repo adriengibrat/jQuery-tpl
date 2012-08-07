@@ -5,14 +5,11 @@
 ( function ( $ ) {
 	var plugin      = function tpl ( template, data ) {
 			var renderer;
-			// Get template from a node (and caching in data)
-			if ( template.nodeType )
+			if ( template.nodeType ) // Get template from a node (and caching in data)
 				renderer = $.data( template, namespace ) || $.data( template, namespace, plugin.compile( template.innerHTML, template.id ) );
-			// Use a pre-defined template, if available
-			else if ( plugin.cache[ template ] )
+			else if ( plugin.cache[ template ] ) // Use a pre-defined template, if available
 				renderer = plugin.cache[ template ];
-			// Get template from element with given Id (accept Id prefixed with #)
-			else if ( /^#?\w+$/.test( template ) && ( renderer = document.getElementById( template.replace( /^#/, '' ) ) ) )
+			else if ( /^#?\w+$/.test( template ) && ( renderer = document.getElementById( template.replace( /^#/, '' ) ) ) ) // Get template from element with given Id (accept Id prefixed with #)
 				return plugin( renderer, data, arguments[ 2 ] );
 			else
 				renderer = plugin.compile( template );
@@ -23,16 +20,17 @@
 				renderer.call( data, data, arguments[ 2 ] || 0 );
 		}
 		, namespace = plugin.name
-		// Override DOM manipulation function
-		, domManip  = $.fn.domManip;
+		, domManip  = $.fn.domManip
+		, add       = $.fn.add;
 	$.fn.domManip     = function ( args ) {
-		// This appears to be a bug in the appendTo, etc. implementation
-		// it should be doing .call() instead of .apply(). See #6227
-		if ( args.length > 1 && args[ 0 ].nodeType )
-			arguments[ 0 ] = [ $.makeArray( args ) ];
 		if ( args.length === 2 && typeof args[ 0 ] === 'string' && typeof args[ 1 ] !== 'string' )
 			arguments[ 0 ] = plugin( args[ 0 ], args[ 1 ] );
 		return domManip.apply( this, arguments );
+	};
+	$.fn.add          = function ( template, data ) {
+		if ( typeof template === 'string' && ( $.isArray( data ) || $.isPlainObject( data ) ) )
+			return add.call( this, plugin( template, data ) );
+		return add.apply( this, arguments );
 	};
 	$.fn[ namespace ] = function ( data ) {
 		return this.map( function ( index, template ) {
@@ -41,18 +39,13 @@
 	};
 	$[ namespace ]    = $.extend( plugin , {
 		compile  : function ( template, id ) {
-			// Reusable template generator function.
-			return plugin.cache[ id || template ] = new Function( '$data', '$index', [
+			return plugin.cache[ id || template ] = new Function( '$data', '$index', [ // Reusable template generator function
 					'var $ = jQuery, $buffer = [];'
 					, '$buffer.push( "'
-					// Convert the template into pure JavaScript
-					+ template
-						// Escape quotes
-						.replace( /"/g, '\\"' )
-						// Escape new lines
-						.replace( /\r\n|[\n\v\f\r\x85\u2028\u2029]/g, '" + "\\n" + "' )
-						// Replace tags
-						.replace( /{{(\W?\s?)([^}]*)}}(?:(.*?){{\/\2}})?/g, function ( all, command, data, content ) {
+					+ template // Convert template into pure JavaScript
+						.replace( /"/g, '\\"' ) // Escape quotes
+						.replace( /\r\n|[\n\v\f\r\x85\u2028\u2029]/g, '" + "\\n" + "' ) // Escape new lines
+						.replace( /{{(\W?\s?)([^}]*)}}(?:(.*?){{\/\2}})?/g, function ( all, command, data, content ) { // Replace tags
 							var tmpl = plugin.fn[ $.trim( command ) ];
 							if ( ! tmpl )
 								return '" );\n$buffer.push( "';//throw 'Command not found: ' + command;
@@ -64,7 +57,7 @@
 								+ ' );\n$buffer.push( "';
 						} )
 					+ '" );'
-					, 'return $( "<' + namespace + '>" + $buffer.join( "" ) + "</' + namespace + '>" ).contents();'
+					, 'return $( "<' + namespace + '>" + $.trim( $buffer.join( "" ) ) + "</' + namespace + '>" ).contents();'
 				].join( '\n' ) );
 		}
 		, encode : function ( text ) {

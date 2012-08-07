@@ -21,11 +21,11 @@ jQuery( function () {
 		.appendTo( 'body' );
 
 	$( '#unescapeExemple' )
-		.after( 'emptySection', {
-			person : true
-		} )
 		.after( '#emptySection', {
 			nothin : true
+		} )
+		.after( 'emptySection', {
+			person : true
 		} )
 		.after( '<i>Empty section exemple</i><br>' );
 
@@ -45,22 +45,26 @@ jQuery( function () {
 			return '<b>' + $.tpl.render( tpl ) + '</b>';
 		}
 	} )
-	.appendTo( 'body' );
+	.appendTo( 'body' )
+	.before( '<i>Lambda exemple</i><br>' );
 
-	$( 'body' )
+	$( '<div/>' )
 		.prepend( 'noneFalse', {
 			'person?' : { name: 'Will' }
 		} )
-		.prepend( '<i>noneFalse exemple</i><br>' );
-
-	$( '#inverted' )
-		.tpl( {
-			repo : []
-		} )
-		.add( $.tpl( '#comment', {} ) )
+		.prepend( '<i>None false exemple</i>' )
 		.appendTo( 'body' )
 
-	$.tpl( 'partial', {
+	$.tpl( '#inverted', {
+		repo : []
+	} )
+	.appendTo( 'body' )
+	.before( '<i>Comment exemple</i>' )
+	.before( 'comment', {} )
+	.before( '<i>Inverted exemple</i>' );
+
+	$( '<i>Partial exemple</i><br>' )
+	.add( 'partial', {
 		names : ['John','Bill']
 	} )
 	.appendTo( 'body' );
@@ -69,7 +73,7 @@ jQuery( function () {
 
 <script id="typical" type="text/html">
 <p>
-Hello {{name}}, 
+Hello {{name}},
 You have just won ${{value}}!<br/>
 {{#in_ca}}
 Well, ${{taxed_value}}, after taxes.
@@ -125,5 +129,5 @@ Shown.
 {{/names}}
 </script>
 <script id="user" type="text/html">
-<li>{{*}}{{.}}</li>
+<li>{{*}} - {{.}}</li>
 </script>
