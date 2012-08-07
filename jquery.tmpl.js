@@ -30,8 +30,11 @@
 			// We're pulling from a node
 			else if ( template.nodeType )
 				render = $.data( template ).tpl || $.tpl.compile( template.innerHTML, template.id );
+			else if ( /^\w+$/.test( template ) && document.getElementById( template ) && ( template  = $( '#' + template ) ) )
+				render = template.data( 'tpl' ) || $.tpl.compile( template.html(), template.attr( 'id' ) );
 			else
 				render = $.tpl.compile( template );// @todo load from url ?
+
 			return $.isArray( data ) ?
 				$( $.map( data, function( data, index ) {
 					return render.call( data, data, index ).get();
@@ -42,50 +45,48 @@
 		compile  : function ( template, id ) {
 			var render = [
 					'var $ = jQuery, $buffer = [];'
-					// Scope data as local variables
-					, 'with ( $data ) {'
 					, '$buffer.push( "'
 					// Convert the template into pure JavaScript
 					+ template
-						.replace( /\r\n|[\n\v\f\r\x85\u2028\u2029]/g, ' ' ) // remove new lines
-						.replace( /"/g, '\\"' )                             // escape quotes
-						.replace( /{{(\W?\s?)([^\s}]*)}}(?:(.*?){{\/\2}})?/g, function ( all, command, data, content ) {
+						.replace( /"/g, '\\"' ) // escape quotes
+						.replace( /\r\n|[\n\v\f\r\x85\u2028\u2029]/g, '" + "\\n" + "' ) // escape new lines
+						.replace( /{{(\W?\s?)([^}]*)}}(?:(.*?){{\/\2}})?/g, function ( all, command, data, content ) {
 							var tmpl = $.tpl.fn[ $.trim( command ) ];
 							if ( ! tmpl )
 								return '" );\n$buffer.push( "';
 								//throw 'Command not found: ' + command;
 							return '" );\n$buffer.push( '
 								+ tmpl
-									.split( '$1' ).join( data )
+									.split( '$0' ).join( data )
+									.split( '$1' ).join( '$data["' + data + '"]' )
 									.split( '$2' ).join( content )
 								+ ' );\n$buffer.push( "';
 						} )
 					+ '" );'
-					, '};'
 					, 'return $( "<tpl>" + $buffer.join( "" ) + "</tpl>" ).contents();'
 				];
 			// Reusable template generator function.
 			return $.tpl.cache[ id || template ] = new Function( '$data', '$index', render.join( '\n' ) );
 		}
 		, encode : function ( text ) {
-			return text != null ?
-				document.createTextNode( text.toString() ).nodeValue :
-				'' ;
+			return text ? $( '<tpl/>' ).text( text ).html() : '' ;
 		}
 		, render : function ( nodes ) {
 			return $.map( nodes, function ( element ) {
 					if ( ! element || ! element.nodeType )
 						return element;
-					return element.innerHTML || element.nodeValue;
+					return $( element ).wrap( '<tpl/>' ).parent().html();
 				} ).join( '' );
 		}
 		, cache  : {}
 		, fn     : {
-			'#'   : '$1 ? $.map( $.makeArray( $1 ), function ( data ) { return $.tpl.render( $.tpl( "$2", data ) ); } ).join( "" ) : null'
-			, ''  : '$.tpl.encode( $.isFunction( $1 ) ? $1.call( this ) : $1 )'
-			, '&' : '$.isFunction( $1 ) ? $1.call( this ) : $1'
-			, '>' : '$.tpl.render( $.tpl( "$1", $data ) )'
-			, '^' : '$1 ? null : "$2"'
+			'#'   : '$1 ? $.map( $.makeArray( typeof $1 === "boolean" ? $data : $1 ), function ( data ) { \
+	return $.tpl.render( $.isFunction( data ) ? data.call( $data, $.tpl( "$2", $data ) ) : $.tpl( "$2", data ) );\
+} ).join( "" ) : null'
+			, ''  : '$.tpl.encode( $.isFunction( $1 ) ? $1.call( $data ) : $1 )'
+			, '&' : '$.isFunction( $1 ) ? $1.call( $data ) : $1'
+			, '>' : '$.tpl.render( $.tpl( "$0", $data ) )'
+			, '^' : '$1 && $1.length ? null : "$2"'
 			, '.' : '$data'
 			, '*' : '$index'
 			, '!' : null

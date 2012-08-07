@@ -2,53 +2,124 @@
 <script src="jquery.tmpl.js"></script>
 <script>
 jQuery( function () {
-	var dataObject       = {
-		name        : function () {
-			return this.firstName + ' ' + this.lastName;
-		}
-		, firstName : 'John'
-		,lastName   : 'Resig'
-		, url       : 'http://ejohn.org/'
-		, link  : function () {
-			return '<a href="' + this.url + '">' + this.name() + '</a>' ;
-		}
-		, cityJoin  : function () {
-			return this.cities.join( ', ' );
-		}
-		, cities    : [
-			'Boston, MA'
-			, 'San Francisco, CA'
-		]
-	}
-	, arrayOfDataObjects = [ dataObject, dataObject, dataObject ]
-	, tmpl               = '<li>{{*}}) {{link}} ({{cityJoin}})</li>';
-	$.tpl.cache.li = $.tpl.compile( tmpl );
-	window.dataObject = dataObject;
-//*
-	$( '#sometmpl ')
-		.tpl( dataObject ) // Returns a LI with all the data filled in
-		.appendTo( 'ul' );
-	$( '#sometmpl' )
-		.tpl( arrayOfDataObjects ) // Returns multiple LIs with data filled in
-		.appendTo( 'ul' );
-
-	$( '#sometmpl2' )
-		.tpl( arrayOfDataObjects ) // Returns multiple LIs with data filled in
-		.appendTo( 'ul' );
-//*/
-	// Appends one LI, filled with data, into the UL
-	$( 'ul' ).append( 'li', dataObject );
-	// Appends multiple LI, filled with data, into the UL
-	$( 'ul' ).append( tmpl, arrayOfDataObjects );
+	$( '#typical' )
+		.tpl( {
+			name          : 'Chris'
+			, value       : 10000
+			, taxed_value : 10000 - ( 10000 * 0.4 )
+			, in_ca       : true
+		} )
+		.appendTo( 'body' );
+	$( '#unescape' )
+		.tpl( {
+			name      : 'Chris'
+			, company : '<b>GitHub</b>'
+		} )
+		.appendTo( 'body' );
+	$( '#emptySection' )
+		.tpl( {
+			person : true
+		} )
+		.appendTo( 'body' );
+	$( 'body' )
+		.append( 'emptySection', {
+			nothin : true
+		} );
+	$( '#section' )
+		.tpl( {
+			repo : [
+				{ name : 'git' }
+				, { name : 'hub' }
+				, { name : 'rocks' }
+			]
+		} )
+		.appendTo( 'body' );
+	$( '#lambda' )
+		.tpl( {
+			name      : 'Willy'
+			, wrapped : function ( tpl ) {
+				return '<b>' + $.tpl.render( tpl ) + '</b>';
+			}
+		} )
+		.appendTo( 'body' );
+	$( '#noneFalse' )
+		.tpl( {
+			'person?' : { name: 'Will' }
+		} )
+		.appendTo( 'body' );
+	$( '#inverted' )
+		.tpl( {
+			repo : []
+		} )
+		.appendTo( 'body' );
+	$( '#comment' )
+		.tpl( {} )
+		.appendTo( 'body' );
+	$( '#partial' )
+		.tpl( {
+			names : [{ name: 'John' },{ name: 'Bill' }]
+		} )
+		.appendTo( 'body' );
 } );
 </script>
 
-<script id="sometmpl" type="text/html">
-	<li>{{*}}) <a href="{{url}}">{{name}}</a> ({{cityJoin}})</li>
+<script id="typical" type="text/html">
+<p>
+Hello {{name}}, 
+You have just won ${{value}}!<br/>
+{{#in_ca}}
+Well, ${{taxed_value}}, after taxes.
+{{/in_ca}}
+</p>
 </script>
-
-<script id="sometmpl2" type="text/html">
-	<li>{{*}}) <a href="{{url}}">{{name}}</a> Cities: {{#cities}}{{.}} {{/cities}}</li>
+<script id="unescape" type="text/html">
+<pre>
+* {{name}}
+* {{age}}
+* {{company}}
+* {{& company}}
+</pre>
 </script>
-
-<ul></ul>
+<script id="emptySection" type="text/html">
+Shown.
+{{#nothin}}
+	Never shown!
+{{/nothin}}
+</script>
+<script id="section" type="text/html">
+<p>{{#repo}}
+	<b>{{name}}</b>
+{{/repo}}</p>
+</script>
+<script id="lambda" type="text/html">
+<p>{{#wrapped}}
+	{{name}} is awesome.
+{{/wrapped}}</p>
+</script>
+<script id="noneFalse" type="text/html">
+<p>{{#person?}}
+	Hi {{name}}!
+{{/person?}}</p>
+</script>
+<script id="inverted" type="text/html">
+<p>{{#repo}}
+	<b>{{name}}</b>
+{{/repo}}
+{{^repo}}
+	No repos :(
+{{/repo}}</p>
+</script>
+<script id="comment" type="text/html">
+<p>Today{{! ignore me }}.</p>
+</script>
+<script id="partial" type="text/html">
+<b>Names</b>
+{{#names}}
+	<ul>
+	{{> user}}
+	</ul>
+{{/names}}
+</script>
+<script id="user" type="text/html">
+<li>{{name}}</li>
+</script>
