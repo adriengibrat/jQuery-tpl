@@ -12,7 +12,7 @@
 			// We're pulling from a node
 			else if ( template.nodeType )
 				render = $.data( template )[ namespace ] || tpl.compile( template.innerHTML, template.id );
-			else if ( /^\w+$/.test( template ) && document.getElementById( template ) && ( template  = $( '#' + template ) ) )
+			else if ( /^#?\w+$/.test( template ) && document.getElementById( template.replace( /^#/, '' ) ) && ( template  = $( template.replace( /(^)(?!#)/, '#' ) ) ) )
 				render = template.data( namespace ) || tpl.compile( template.html(), template.attr( 'id' ) );
 			else // @todo load from url ?
 				render = tpl.compile( template );

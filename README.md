@@ -1,15 +1,26 @@
-A jQuery templating plugin - created for demonstration purposes.
+Light & logicless templating for jQuery using Mustache like markup & syntax.
 
-    $("#sometmpl")
-	    .render( dataObject ) // Returns a LI with all the data filled in
-	    .appendTo("ul");
-    
-    $("#sometmpl")
-	    .render( arrayOfDataObjects ) // Returns multiple LIs with data filled in
-	    .appendTo("ul");
-    
-    // Appends one LI, filled with data, into the UL
-    $("ul").append( tmpl, dataObject );
+@see  http://mustache.github.com/mustache.5.html for markup & syntax.
+@todo Write real doc.
+```javascript
+// Append one Item
+$( '#litpl' )
+	.tpl( object )
+	.appendTo( 'ul' );
+// Or
+$( 'ul' ).append( '#sometmpl', object );
 
-    // Appends multiple LI, filled with data, into the UL
-    $("ul").append( tmpl, arrayOfDataObjects );
+// Append multiple Items
+$( '#litpl' )
+	.tpl( arrayOfObjects )
+	.appendTo( 'ul' );
+//Or
+$( 'ul' ).append( '#sometmpl', arrayOfObjects );
+```
+```html
+<ul></ul>
+
+<script id="litpl" type="text/html">
+<li><b>{{property}}</b></li>
+</script>
+```
