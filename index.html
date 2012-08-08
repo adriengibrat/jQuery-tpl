@@ -60,7 +60,7 @@ jQuery( function () {
 	} )
 	.appendTo( 'body' )
 	.before( '<i>Comment exemple</i>' )
-	.before( 'comment', {} )
+	.before( 'comment', null )
 	.before( '<i>Inverted exemple</i>' );
 
 	$( '<i>Partial exemple</i><br>' )
@@ -129,5 +129,5 @@ Shown.
 {{/names}}
 </script>
 <script id="user" type="text/html">
-<li>{{*}} - {{.}}</li>
+<li>{{*1}} - {{.}}</li>
 </script>
