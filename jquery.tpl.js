@@ -3,7 +3,7 @@
  * Dual licensed under the MIT or GPL Version 2 licenses
  */
 ( function ( $ ) {
-	var plugin      = function tpl ( template, data ) {
+	var plugin      = function ( template, data ) {
 			var tpl;
 			if ( template.nodeType ) // Get template from a node (and caching in data)
 				tpl = $.data( template, namespace ) || $.data( template, namespace, plugin.compile( template.innerHTML, template.id ) );
@@ -19,7 +19,7 @@
 				} ) ) :
 				tpl.call( data, data, arguments[ 2 ] || 0 );
 		}
-		, namespace = plugin.name
+		, namespace = 'tpl'
 		, domManip  = $.fn.domManip
 		, add       = $.fn.add;
 	$.fn.domManip     = function ( args ) {
