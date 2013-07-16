@@ -13,6 +13,7 @@
 				return plugin( tpl, data, arguments[ 2 ] );
 			else
 				tpl = plugin.compile( template );
+			data = plugin.resolve( data );
 			return $.isArray( data ) ?
 				$( $.map( data, function( data, index ) {
 					return tpl.call( data, data, index ).get();
@@ -70,22 +71,25 @@
 					return $( element ).wrap( '<' + namespace + '/>' ).parent().html();
 				} ).join( '' );
 		}
+		, resolve : function ( data ) {
+			return $.isFunction( data ) ? data.call() : data;
+		}
+		, empty : function ( data ) {
+			data = this.resolve( data );
+			return ! data || ( data && ! data.length ) ? true : false;
+		}
 		, cache  : {}
 		, fn     : {
-			'#'   : '$1 ? \
+			'#'   : '($1 = $.' + namespace + '.resolve($1)) ? \
 $.map( $.makeArray( typeof $1 === "boolean" ? $data : $1 ), function ( data, index ) { \
-	return $.' + namespace + '.render( \
-		$.isFunction( data ) ?\
-			data.call( $data, $.' + namespace + '( $2, $data, index ) ) : \
-			$.' + namespace + '( $2, data, index ) \
-	); \
+	return $.' + namespace + '.render( $.' + namespace + '( $2, data, index ) ); \
 } ).join( "" ) : \
 null'
-			, ''  : '$.' + namespace + '.encode( $.isFunction( $1 ) ? $1.call( $data ) : $1 )'
-			, '&' : '$.isFunction( $1 ) ? $1.call( $data ) : $1'
+			, ''  : '$.' + namespace + '.encode( $.' + namespace + '.resolve($1) )'
+			, '&' : '$.' + namespace + '.resolve($1)'
 			, '>' : '$.' + namespace + '.render( $.' + namespace + '( $0, $data, $index ) )'
-			, '^' : '$1 && $1.length ? null : $2'
-			, '.' : '$data'
+			, '^' : '$.' + namespace + '.empty($1) ? $.' + namespace + '.render( $.' + namespace + '( $2, $data, $index ) ) : null'
+			, '.' : '$.' + namespace + '.resolve($data)'
 			, '*' : '$index + ( parseInt( $0, 10 ) || 0 )'
 			, '!' : null
 		}
