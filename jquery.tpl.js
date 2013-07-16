@@ -41,7 +41,7 @@
 	$[ namespace ]    = $.extend( plugin , {
 		compile  : function ( template, id ) {
 			return plugin.cache[ id || template ] = new Function( '$data', '$index', [
-					'var $ = jQuery, $buffer = [];'
+					'var $ = jQuery, $buffer = []; $data = $data || {};'
 					, '$buffer.push( "'
 					+ template
 						.replace( /"/g, '\\"' ) // Escape quotes
