@@ -41,13 +41,13 @@
 	$[ namespace ]    = $.extend( plugin , {
 		compile  : function ( template, id ) {
 			return plugin.cache[ id || template ] = new Function( '$data', '$index', [
-					'var $ = jQuery, $buffer = []; $data = $data || {};'
+					'var $ = jQuery, $buffer = [];$data = $data || {};'
 					, '$buffer.push( "'
 					+ template
 						.replace( /"/g, '\\"' ) // Escape quotes
 						.replace( /\r\n|[\n\v\f\r\x85\u2028\u2029]/g, '" + "\\n" + "' ) // Escape new lines
 						.replace( /{{(\W?\s?)([^}]*)}}(?:(.*?){{\/\2}})?/g, function ( all, command, data, content ) {
-							var tmpl = plugin.fn[ $.trim( command ) ];
+							var tmpl = plugin.expr[ $.trim( command ) ];
 							if ( ! tmpl )
 								return '" );\n$buffer.push( "';//throw 'Command not found: ' + command;
 							return '" );\n$buffer.push( '
@@ -62,9 +62,11 @@
 				].join( '\n' ) );
 		}
 		, encode : function ( text ) {
-			return text ? $( '<' + namespace + '/>' ).text( text ).html() : '' ;
+			return text ?
+				$( '<' + namespace + '/>' ).text( text ).html() :
+				'' ;
 		}
-		, render : function ( nodes ) {
+		, html   : function ( nodes ) {
 			return $.map( nodes, function ( element ) {
 					if ( ! element || ! element.nodeType )
 						return element;
@@ -72,23 +74,25 @@
 				} ).join( '' );
 		}
 		, resolve : function ( data ) {
-			return $.isFunction( data ) ? data.call() : data;
+			return $.isFunction( data ) ?
+				data.call() :
+				data;
 		}
 		, empty : function ( data ) {
 			data = this.resolve( data );
 			return ! data || ( $.isArray(data) && ! data.length ) ? true : false;
 		}
 		, cache  : {}
-		, fn     : {
+		, expr   : {
 			'#'   : '($1 = $.' + namespace + '.resolve($1)) ? \
 $.map( $.makeArray( typeof $1 === "boolean" ? $data : $1 ), function ( data, index ) { \
-	return $.' + namespace + '.render( $.' + namespace + '( $2, data, index ) ); \
+	return $.' + namespace + '.html( $.' + namespace + '( $2, data, index ) ); \
 } ).join( "" ) : \
 null'
 			, ''  : '$.' + namespace + '.encode( $.' + namespace + '.resolve($1) )'
 			, '&' : '$.' + namespace + '.resolve($1)'
-			, '>' : '$.' + namespace + '.render( $.' + namespace + '( $0, $data, $index ) )'
-			, '^' : '$.' + namespace + '.empty($1) ? $.' + namespace + '.render( $.' + namespace + '( $2, $data, $index ) ) : null'
+			, '>' : '$.' + namespace + '.html( $.' + namespace + '( $0, $data, $index ) )'
+			, '^' : '$.' + namespace + '.empty($1) ? $.' + namespace + '.html( $.' + namespace + '( $2, $data, $index ) ) : null'
 			, '.' : '$.' + namespace + '.resolve($data)'
 			, '*' : '$index + ( parseInt( $0, 10 ) || 0 )'
 			, '!' : null
