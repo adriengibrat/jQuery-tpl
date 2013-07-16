@@ -76,7 +76,7 @@
 		}
 		, empty : function ( data ) {
 			data = this.resolve( data );
-			return ! data || ( data && ! data.length ) ? true : false;
+			return ! data || ( $.isArray(data) && ! data.length ) ? true : false;
 		}
 		, cache  : {}
 		, fn     : {
