@@ -9,7 +9,7 @@
 				tpl = $.data( template, namespace ) || $.data( template, namespace, plugin.compile( template.innerHTML, template.id ) );
 			else if ( plugin.cache[ template ] ) // Use pre-defined template, if available
 				tpl = plugin.cache[ template ];
-			else if ( /^#?\w+$/.test( template ) && ( tpl = document.getElementById( template.replace( /^#/, '' ) ) ) ) // Get template from element with given Id (accept Id prefixed with #)
+			else if ( /^#?[\w-]+$/.test( template ) && ( tpl = document.getElementById( template.replace( /^#/, '' ) ) ) ) // Get template from element with given Id (accept Id prefixed with #)
 				return plugin( tpl, data, arguments[ 2 ] );
 			else
 				tpl = plugin.compile( template );
@@ -46,8 +46,9 @@
 					+ template
 						.replace( /"/g, '\\"' ) // Escape quotes
 						.replace( /\r\n|[\n\v\f\r\x85\u2028\u2029]/g, '" + "\\n" + "' ) // Escape new lines
-						.replace( /{{(\W?\s?)([^}]*)}}(?:(.*?){{\/\2}})?/g, function ( all, command, data, content ) {
-							var tmpl = plugin.expr[ $.trim( command ) ];
+						.replace( /{{ *(\W?\s?)([^}]*?) *}}(?:(.*?){{ *\/\2 *}})?/g, function ( all, command, data, content ) {
+							console.log([command,data,content]);
+			                            var tmpl = plugin.expr[ $.trim( command ) ];
 							if ( ! tmpl )
 								return '" );\n$buffer.push( "';//throw 'Command not found: ' + command;
 							return '" );\n$buffer.push( '
@@ -58,7 +59,7 @@
 								+ ' );\n$buffer.push( "';
 						} )
 					+ '" );'
-					, 'return $( "<' + namespace + '>" + $.trim( $buffer.join( "" ) ) + "</' + namespace + '>" ).contents();'
+					, 'return $( "<' + namespace + '>" + $buffer.join( "" ) + "</' + namespace + '>" ).contents();'
 				].join( '\n' ) );
 		}
 		, encode : function ( text ) {
