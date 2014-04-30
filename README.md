@@ -24,5 +24,5 @@ $( 'ul' ).append( '#sometmpl', arrayOfObjects );
 </script>
 ```
 * Support n based index with {{*n}} tag (get index of array of data)
-* Don't support delimiter's change yet
+* Don't support delimiter's change, but you can escape delimiters ( {%{% & %}%} respectively)
 * Don't support nested {{#blocks}} with same names (and won't support it as I use regex and not state machine)
