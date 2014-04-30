@@ -47,7 +47,7 @@
 						.replace( /"/g, '\\"' ) // Escape quotes
 						.replace( /\r\n|[\n\v\f\r\x85\u2028\u2029]/g, '" + "\\n" + "' ) // Escape new lines
 						.replace( /{{ *(\W?\s?)([^}]*?) *}}(?:(.*?){{ *\/\2 *}})?/g, function ( all, command, data, content ) {
-							var tmpl = plugin.expr[ $.trim( command ) ];
+			                var tmpl = plugin.expr[ $.trim( command ) ];
 							if ( ! tmpl )
 								return '" );\n$buffer.push( "';//throw 'Command not found: ' + command;
 							return '" );\n$buffer.push( '
@@ -58,9 +58,10 @@
 								+ ' );\n$buffer.push( "';
 						} )
 					+ '" );'
-					, 'return $( "<' + namespace + '>" + $buffer.join( "" ) + "</' + namespace + '>" ).contents();'
-				].join( '\n' ) );
-		}
+					, 'return $( "<' + namespace + '>" + $buffer.join( "" ).replace( /{%{%/g, "{{" ).replace( /%}%}/g, "}}" ) + "</' + namespace + '>" ).contents();'
+				].join( '\n' )
+            );
+        }
 		, encode : function ( text ) {
 			return text ?
 				$( '<' + namespace + '/>' ).text( text ).html() :
